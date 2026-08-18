@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Notes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="student-page" class="hidden">
+    <div class="container">
+        <!-- Updated Header -->
+        <div class="header">
+            <div class="header-left">
+                <img id="student-profile-img" src="" alt="Profile" class="profile-pic hidden">
+                <div>
+                    <h1>Class Notes</h1>
+                    <p id="student-welcome-text">Welcome, Student</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" id="btn-edit-profile" style="width: auto;">Edit Profile</button>
+                <button class="btn btn-secondary" id="btn-logout" style="width: auto;">Logout</button>
+            </div>
+        </div>
+
+        <div class="notes-grid" id="notes-container">
+            <!-- Notes injected here via JS -->
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="modal-overlay hidden">
+        <div class="card">
+            <h2>Edit Profile</h2>
+            <form id="edit-profile-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="edit-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" id="edit-age" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Course</label>
+                    <select id="edit-course" class="form-control" required>
+                        <option value="BBA">BBA</option>
+                        <!-- Add more options if needed -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Section (Locked)</label>
+                    <input type="text" id="edit-section" class="form-control" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Roll Number (Locked)</label>
+                    <input type="text" id="edit-roll" class="form-control" disabled>
+                </div>
+                <!-- Edit Profile Picture -->
+                <div class="form-group">
+                    <label>Profile Picture (Leave blank to keep current)</label>
+                    <input type="file" id="edit-pic" class="form-control" accept="image/*">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn">Update Profile</button>
+                    <button type="button" class="btn btn-secondary" id="btn-close-modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
