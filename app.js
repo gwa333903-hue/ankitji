@@ -21,7 +21,7 @@ const ADMIN_EMAIL = "gwa333903@gmail.com"; // Your actual Google email
 
 const GITHUB_USERNAME = "gwa333903-hue"; 
 const GITHUB_REPO = "class"; 
-const GITHUB_TOKEN = process.env.G_TOKEN; // Your Fine-Grained PAT
+const GITHUB_TOKEN = ""; // Your Fine-Grained PAT
 
 // ==========================================
 // 2. INITIALIZATION
