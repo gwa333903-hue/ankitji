@@ -1,14 +1,5 @@
 // File: api/upload.js
 
-// NEW: Increase the body size limit to prevent 413 Payload Too Large errors
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb', // Adjust this size limit as needed for your application
-    },
-  },
-};
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
