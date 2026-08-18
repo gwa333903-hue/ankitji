@@ -17,17 +17,6 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "gwa333903@gmail.com"; 
 const GITHUB_USERNAME = "gwa333903-hue"; 
 const GITHUB_REPO = "class"; 
-// const GITHUB_TOKEN = ""; 
-// We ask Vercel for the data instead of asking GitHub directly
-fetch('/api/github')
-  .then(response => response.json())
-  .then(data => {
-    console.log("Here is the data from GitHub:", data);
-    // You can write your code here to display the data on your website!
-  })
-  .catch(error => {
-    console.error("Oops, something went wrong:", error);
-  });
 
 // ==========================================
 // 2. INITIALIZATION & HELPERS
@@ -215,7 +204,7 @@ async function initAdminDashboard() {
         if (!file) return;
 
         btnUpload.disabled = true;
-        uploadStatus.innerText = "Converting and uploading to GitHub... please wait.";
+        uploadStatus.innerText = "Converting and uploading securely... please wait.";
         uploadStatus.style.color = "black";
 
         const reader = new FileReader();
@@ -227,27 +216,29 @@ async function initAdminDashboard() {
                 const safeFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
                 const filePath = `class_notes/${Date.now()}_${safeFileName}`;
                 
-                const githubApiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${filePath}`;
-
-                const githubResponse = await fetch(githubApiUrl, {
-                    method: "PUT",
+                // 🚀 Send the file to our new Vercel Backend instead of GitHub directly!
+                const backendResponse = await fetch('/api/upload', {
+                    method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        message: `Admin upload: ${file.name}`,
+                        filename: filePath,
+                        originalName: file.name,
                         content: base64Content
                     })
                 });
 
-                if (!githubResponse.ok) {
-                    throw new Error("GitHub API rejected the upload. Check your token and repo name.");
+                const backendData = await backendResponse.json();
+
+                if (!backendResponse.ok) {
+                    throw new Error(backendData.error || "Backend rejected the upload.");
                 }
 
-                const githubData = await githubResponse.json();
-                const fileUrl = githubData.content.download_url;
+                // Get the URL sent back by our serverless function
+                const fileUrl = backendData.fileUrl;
 
+                // Save to Firestore
                 await addDoc(collection(db, "class_notes"), {
                     fileName: file.name,
                     fileUrl: fileUrl,
