@@ -5,48 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Student Notes Portal</title>
     <link rel="stylesheet" href="style.css">
+
+    <!-- Import Map for Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 <body>
+    <!-- 3D Background Canvas -->
+    <canvas id="liquid-ocean-canvas"></canvas>
+
     <div class="auth-wrapper">
-        <div class="card" id="login-section">
-            <h2>Student Portal</h2>
+        <!-- Enhanced Professional Login Section -->
+        <div class="card login-card" id="login-section">
+            <!-- Floating Top Icon -->
+            <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+
+            <h2 class="login-title">Login Now</h2>
             
-            <!-- New Email & Password Form -->
             <form id="email-auth-form">
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="auth-email" class="form-control" required>
+                    <label class="muted-label">Email *</label>
+                    <input type="email" id="auth-email" class="form-control rounded-input" placeholder="Enter your Email" required>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="auth-password" class="form-control" required>
+                    <label class="muted-label">Password *</label>
+                    <input type="password" id="auth-password" class="form-control rounded-input" placeholder="Enter your Password" required>
                 </div>
-                <button type="submit" class="btn" id="btn-email-login">Login with Email</button>
-                <button type="button" class="btn btn-secondary" id="btn-email-signup" style="margin-top: 10px;">Sign Up with Email</button>
+                
+                <!-- Remember Me Checkbox -->
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="remember-me"> Remember me
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary rounded-btn" id="btn-email-login">LOGIN / SIGNUP</button>
             </form>
 
-            <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted);">OR</div>
+            <div class="divider"><span>OR</span></div>
 
-            <!-- Existing Google Login -->
-            <button class="btn" id="btn-login" style="background-color: #db4437;">Sign in with Google</button>
+            <!-- Restyled Professional Google Login -->
+            <button type="button" class="btn btn-google rounded-btn" id="btn-login">
+                <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Sign in with Google
+            </button>
         </div>
 
+        <!-- Profile Completion Section (Hidden by default, shown by app.js on signup) -->
         <div class="card hidden" id="profile-section">
             <h2>Complete Profile</h2>
             <form id="profile-form">
-                <!-- NEW: Profile Picture Input -->
+                <!-- Updated: Profile Picture is now optional -->
                 <div class="form-group">
-                    <label>Profile Picture</label>
-                    <input type="file" id="p-pic" class="form-control" accept="image/*" required>
+                    <label>Profile Picture (Optional)</label>
+                    <input type="file" id="p-pic" class="form-control" accept="image/*">
                 </div>
-
                 <div class="form-group">
                     <label>Full Name</label>
                     <input type="text" id="p-name" class="form-control" required>
                 </div>
+                <!-- Updated: Age is now Date of Birth -->
                 <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" id="p-age" class="form-control" required>
+                    <label>Date of Birth</label>
+                    <input type="date" id="p-dob" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label>Course</label>
@@ -55,19 +92,179 @@
                         <option value="BCA">BCA</option>
                     </select>
                 </div>
+                <!-- Updated: Section as a dropdown with specific options -->
                 <div class="form-group">
                     <label>Section</label>
-                    <input type="text" id="p-section" class="form-control" required>
+                    <select id="p-section" class="form-control" required>
+                        <option value="1.1">1.1</option>
+                        <option value="1.2">1.2</option>
+                        <option value="1.3">1.3</option>
+                        <option value="1.4">1.4</option>
+                        <option value="1.5">1.5</option>
+                    </select>
                 </div>
+                <!-- Updated: Roll Number type number and limit < 110 -->
                 <div class="form-group">
                     <label>Roll Number</label>
-                    <input type="text" id="p-roll" class="form-control" required>
+                    <input type="number" id="p-roll" class="form-control" min="1" max="109" required>
                 </div>
-                <button type="submit" class="btn">Save Profile</button>
+                <button type="submit" class="btn rounded-btn">Save Profile</button>
             </form>
         </div>
     </div>
     
     <script type="module" src="app.js"></script>
+
+    <!-- Vanilla Three.js Liquid Ocean Implementation -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+
+        // Initialize Settings
+        RectAreaLightUniformsLib.init();
+        const THEME = { background: 0x000000, gridColor: 0x333333, accentColor: 0xF00589 };
+        const config = {
+            fov: 20, rotationSpeed: 0.001, oceanSize: 25, oceanFragments: 25,
+            waveAmplitude: 0.2, waveSpeed: 0.05, boatCount: 5, boatSpread: 5
+        };
+
+        // Setup Scene
+        const canvas = document.getElementById('liquid-ocean-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(1);
+        renderer.shadowMap.enabled = true;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(THEME.background);
+        scene.fog = new THREE.Fog(THEME.background, 5, 20);
+
+        const camera = new THREE.PerspectiveCamera(config.fov, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 10);
+        camera.lookAt(0, 0, 0);
+
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xFFD3D3, THEME.accentColor, 2);
+        scene.add(hemiLight);
+
+        const pointLight1 = new THREE.PointLight(THEME.accentColor, 1);
+        pointLight1.position.set(-5, -20, -20);
+        scene.add(pointLight1);
+
+        const rectLight = new THREE.RectAreaLight(THEME.accentColor, 20, 3, 3);
+        rectLight.position.set(2, 2, -20);
+        rectLight.lookAt(0, 0, 0);
+        scene.add(rectLight);
+
+        const pointLight2 = new THREE.PointLight(THEME.accentColor, 0.1);
+        pointLight2.position.set(0, 2, -2);
+        scene.add(pointLight2);
+
+        // Rotating Group
+        const group = new THREE.Group();
+        scene.add(group);
+
+        // Grid Helper
+        const gridHelper = new THREE.GridHelper(20, 20, THEME.gridColor, THEME.gridColor);
+        gridHelper.position.set(0, -1, 0);
+        group.add(gridHelper);
+
+        // Ocean Mesh
+        const oceanGeo = new THREE.PlaneGeometry(config.oceanSize, config.oceanSize, config.oceanFragments, config.oceanFragments);
+        const positionAttr = oceanGeo.getAttribute('position');
+        const waves = [];
+
+        for (let i = 0; i < positionAttr.count; i++) {
+            waves.push({
+                x: positionAttr.getX(i),
+                y: positionAttr.getY(i),
+                z: positionAttr.getZ(i),
+                ang: Math.PI * 2,
+                amp: Math.random() * config.waveAmplitude,
+                speed: 0.03 + Math.random() * config.waveSpeed,
+            });
+        }
+
+        const surfaceMat = new THREE.MeshPhysicalMaterial({ color: THEME.accentColor, transparent: true, opacity: 0.85, wireframe: false });
+        const wireMat = new THREE.MeshPhysicalMaterial({ color: THEME.accentColor, wireframe: true });
+
+        const oceanGroup = new THREE.Group();
+        oceanGroup.rotation.x = -Math.PI / 2;
+        
+        const oceanSurface = new THREE.Mesh(oceanGeo, surfaceMat);
+        oceanSurface.receiveShadow = true;
+        const oceanWire = new THREE.Mesh(oceanGeo, wireMat);
+        
+        oceanGroup.add(oceanSurface);
+        oceanGroup.add(oceanWire);
+        group.add(oceanGroup);
+
+        // Boats
+        const boats = [];
+        const boatGeo = new THREE.BoxGeometry(1, 1, 1);
+        const boatMat = new THREE.MeshStandardMaterial({ color: THEME.accentColor });
+
+        for (let i = 0; i < config.boatCount; i++) {
+            const mesh = new THREE.Mesh(boatGeo, boatMat);
+            mesh.castShadow = true;
+            
+            const x = -Math.random() * config.boatSpread + Math.random() * config.boatSpread;
+            const z = -Math.random() * config.boatSpread + Math.random() * config.boatSpread;
+            const sX = Math.random();
+            const sY = 0.5 + Math.random() * 2;
+            
+            mesh.position.set(x, 0, z);
+            mesh.scale.set(sX, sY, sX);
+            mesh.rotation.y = (Math.random() * 360 * Math.PI) / 180;
+
+            group.add(mesh);
+            boats.push({
+                mesh,
+                vel: 1 + Math.random() * 4,
+                amp: 1 + Math.random() * 6,
+                pos: Math.random() * 0.2
+            });
+        }
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate main group
+            group.rotation.y += config.rotationSpeed;
+
+            // Animate Ocean Waves
+            const posAttr = oceanGeo.getAttribute('position');
+            for (let i = 0; i < posAttr.count; i++) {
+                const wave = waves[i];
+                posAttr.setX(i, wave.x + Math.cos(wave.ang) * wave.amp);
+                posAttr.setY(i, wave.y + Math.sin(wave.ang / 2) * wave.amp);
+                posAttr.setZ(i, wave.z + Math.cos(wave.ang / 3) * wave.amp);
+                wave.ang += wave.speed;
+            }
+            posAttr.needsUpdate = true;
+
+            // Animate Boats
+            const time = clock.getElapsedTime() * 3;
+            boats.forEach(boat => {
+                boat.mesh.rotation.z = (Math.sin(time / boat.vel) * boat.amp * Math.PI) / 180;
+                boat.mesh.rotation.x = (Math.cos(time) * boat.vel * Math.PI) / 180;
+                boat.mesh.position.y = Math.sin(time / boat.vel) * boat.pos;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
 </body>
 </html>

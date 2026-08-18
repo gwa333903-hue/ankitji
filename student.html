@@ -11,7 +11,8 @@
         <!-- Updated Header -->
         <div class="header">
             <div class="header-left">
-                <img id="student-profile-img" src="" alt="Profile" class="profile-pic hidden">
+                <!-- Added a title to indicate clickability -->
+                <img id="student-profile-img" src="image.png" alt="Profile" class="profile-pic hidden" title="Click to edit profile picture">
                 <div>
                     <h1>Class Notes</h1>
                     <p id="student-welcome-text">Welcome, Student</p>
@@ -43,9 +44,10 @@
                     <label>Full Name</label>
                     <input type="text" id="edit-name" class="form-control" required>
                 </div>
+                <!-- Updated: Age to Date of Birth -->
                 <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" id="edit-age" class="form-control" required>
+                    <label>Date of Birth</label>
+                    <input type="date" id="edit-dob" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label>Course</label>

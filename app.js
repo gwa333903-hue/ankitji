@@ -110,7 +110,6 @@ if (btnLogin) {
 }
 
 const emailAuthForm = document.getElementById('email-auth-form');
-const btnEmailSignup = document.getElementById('btn-email-signup');
 
 if (emailAuthForm) {
     emailAuthForm.addEventListener('submit', async (e) => {
@@ -121,25 +120,19 @@ if (emailAuthForm) {
         try {
             await signInWithEmailAndPassword(auth, email, password);
         } catch (err) {
-            alert("Login failed: " + err.message);
-        }
-    });
-}
-
-if (btnEmailSignup) {
-    btnEmailSignup.addEventListener('click', async () => {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-password').value;
-        
-        if (!email || !password) {
-            alert("Please enter both an email and password to sign up.");
-            return;
-        }
-        
-        try {
-            await createUserWithEmailAndPassword(auth, email, password);
-        } catch (err) {
-            alert("Sign up failed: " + err.message);
+            if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
+                try {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                } catch (signupErr) {
+                    if (signupErr.code === 'auth/email-already-in-use') {
+                        alert("Incorrect password for existing account.");
+                    } else {
+                        alert("Sign up failed: " + signupErr.message);
+                    }
+                }
+            } else {
+                alert("Login failed: " + err.message);
+            }
         }
     });
 }
@@ -161,12 +154,12 @@ if (profileForm) {
             await setDoc(doc(db, "users", user.uid), {
                 name: document.getElementById('p-name').value,
                 email: user.email,
-                age: Number(document.getElementById('p-age').value),
+                dob: document.getElementById('p-dob').value,
                 course: document.getElementById('p-course').value,
                 section: document.getElementById('p-section').value,
                 rollNumber: document.getElementById('p-roll').value,
                 photoURL: photoBase64,
-                favorites: [] // Initialize favorites array
+                favorites: [] 
             });
             window.location.href = 'student.html';
         } catch (error) {
@@ -202,7 +195,6 @@ async function initAdminDashboard() {
         const file = fileInput.files[0];
         if (!file) return;
 
-        // Get Custom Name and Course
         const customNameInput = document.getElementById('custom-file-name').value.trim();
         const selectedCourse = document.getElementById('upload-course').value;
         const finalFileName = customNameInput !== "" ? customNameInput : file.name;
@@ -240,7 +232,6 @@ async function initAdminDashboard() {
 
                 const fileUrl = backendData.fileUrl;
 
-                // Save to Firestore with new fields
                 await addDoc(collection(db, "class_notes"), {
                     fileName: finalFileName,
                     originalName: file.name,
@@ -359,10 +350,22 @@ async function initStudentDashboard() {
     document.getElementById('student-welcome-text').innerText = `Welcome, ${currentUserData.name} (Roll: ${currentUserData.rollNumber})`;
     
     const profileImg = document.getElementById('student-profile-img');
+    
+    // Check if the user has a photoURL. If not, fallback to the default image.
     if (currentUserData.photoURL) {
         profileImg.src = currentUserData.photoURL;
-        profileImg.classList.remove('hidden');
+    } else {
+        profileImg.src = "image.png"; 
     }
+    profileImg.classList.remove('hidden');
+
+    // Make the profile picture clickable to open edit modal
+    profileImg.addEventListener('click', () => {
+        const btnEditProfile = document.getElementById('btn-edit-profile');
+        if (btnEditProfile) {
+            btnEditProfile.click();
+        }
+    });
     
     // --- Edit Profile Logic ---
     const editProfileModal = document.getElementById('edit-profile-modal');
@@ -373,7 +376,7 @@ async function initStudentDashboard() {
     if (btnEditProfile) {
         btnEditProfile.addEventListener('click', () => {
             document.getElementById('edit-name').value = currentUserData.name || '';
-            document.getElementById('edit-age').value = currentUserData.age || '';
+            document.getElementById('edit-dob').value = currentUserData.dob || ''; 
             document.getElementById('edit-course').value = currentUserData.course || '';
             document.getElementById('edit-section').value = currentUserData.section || '';
             document.getElementById('edit-roll').value = currentUserData.rollNumber || '';
@@ -398,7 +401,7 @@ async function initStudentDashboard() {
 
             try {
                 const newName = document.getElementById('edit-name').value;
-                const newAge = Number(document.getElementById('edit-age').value);
+                const newDob = document.getElementById('edit-dob').value;
                 const newCourse = document.getElementById('edit-course').value;
                 
                 const picFile = document.getElementById('edit-pic').files[0];
@@ -409,13 +412,13 @@ async function initStudentDashboard() {
 
                 await updateDoc(doc(db, "users", auth.currentUser.uid), {
                     name: newName,
-                    age: newAge,
+                    dob: newDob,
                     course: newCourse,
                     photoURL: finalPhotoURL
                 });
 
                 currentUserData.name = newName;
-                currentUserData.age = newAge;
+                currentUserData.dob = newDob;
                 currentUserData.course = newCourse;
                 currentUserData.photoURL = finalPhotoURL;
                 
@@ -423,12 +426,13 @@ async function initStudentDashboard() {
                 
                 if (finalPhotoURL) {
                     profileImg.src = finalPhotoURL;
-                    profileImg.classList.remove('hidden');
+                } else {
+                    profileImg.src = "image_84edc6.png"; 
                 }
                 
                 alert("Profile updated successfully!");
                 editProfileModal.classList.add('hidden');
-                location.reload(); // Refresh to update notes based on new course if changed
+                location.reload(); 
             } catch (error) {
                 alert("Error updating profile: " + error.message);
             } finally {
@@ -455,7 +459,6 @@ async function initStudentDashboard() {
         const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
         const filteredNotes = allNotes.filter(note => {
-            // Check course (if no course on note, assume it's for everyone, or restrict to exact match)
             const matchesCourse = note.course === currentUserData.course; 
             const matchesSearch = note.fileName.toLowerCase().includes(searchTerm);
             const matchesFav = showingFavorites ? currentUserData.favorites.includes(note.id) : true;
@@ -488,7 +491,6 @@ async function initStudentDashboard() {
                 </div>
             `;
 
-            // Favorite Button Logic
             const starBtn = card.querySelector('.star-btn');
             starBtn.addEventListener('click', async () => {
                 const noteId = note.id;
@@ -509,12 +511,10 @@ async function initStudentDashboard() {
                 }
             });
 
-            // Preview Logic
             card.querySelector('.btn-preview').addEventListener('click', () => {
                 window.open(note.fileUrl, '_blank');
             });
 
-            // Download Logic
             card.querySelector('.btn-download').addEventListener('click', async (e) => {
                 const btn = e.target;
                 btn.innerText = "Loading...";
