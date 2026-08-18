@@ -53,6 +53,7 @@ onAuthStateChanged(auth, async (user) => {
             setupLogout();
             return;
         }
+
         // Student Routing & Profile Check
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
