@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="admin-page" class="hidden">
+    <div class="container">
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <button class="btn btn-secondary" id="btn-logout" style="width: auto;">Logout</button>
+        </div>
+
+        <div class="admin-grid">
+            <div class="left-col">
+                <div class="stat-card">
+                    <p>Total Registered Students</p>
+                    <h3 id="total-users">0</h3>
+                </div>
+
+                <div class="card">
+                    <h3>Upload Class Note</h3><br>
+                    <form id="upload-form">
+                        <div class="form-group">
+                            <label>Select File (PDF, PPT, Word, Excel, Image)</label>
+                            <input type="file" id="file-input" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn" id="btn-upload">Upload File</button>
+                        <p id="upload-status" style="margin-top: 10px; font-size: 0.9rem;"></p>
+                    </form>
+                </div>
+            </div>
+
+            <div class="right-col card" style="max-width: 100%;">
+                <h3>Recent Downloads</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Roll No</th>
+                                <th>Name</th>
+                                <th>File Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table-body">
+                            <!-- Logs injected here via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

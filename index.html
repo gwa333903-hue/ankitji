@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Student Notes Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="card" id="login-section">
+            <h2>Student Portal</h2>
+            <button class="btn" id="btn-login">Sign in with Google</button>
+        </div>
+
+        <div class="card hidden" id="profile-section">
+            <h2>Complete Profile</h2>
+            <form id="profile-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="p-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" id="p-age" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Course</label>
+                    <select id="p-course" class="form-control" required>
+                        <option value="BBA">BBA</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Section</label>
+                    <input type="text" id="p-section" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Roll Number</label>
+                    <input type="text" id="p-roll" class="form-control" required>
+                </div>
+                <button type="submit" class="btn">Save Profile</button>
+            </form>
+        </div>
+    </div>
+    
+    <script type="module" src="app.js"></script>
+</body>
+</html>
