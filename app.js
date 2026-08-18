@@ -3,10 +3,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, getCountFromServer, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // ==========================================
-// 1. CONFIGURATION (FILL THESE IN!)
+// 1. CONFIGURATION
 // ==========================================
-
-// Your Firebase Config (From Project Settings)
 const firebaseConfig = {
   apiKey: "AIzaSyAG4RJ1YV4F2mRUcdxzWI5kVY1ErtGATv4",
   authDomain: "classn-12.firebaseapp.com",
@@ -16,22 +14,51 @@ const firebaseConfig = {
   appId: "1:165777497789:web:2cf437815dc4639bcd21d4",
 };
 
-// Admin & GitHub Settings
-const ADMIN_EMAIL = "gwa333903@gmail.com"; // Your actual Google email
-
+const ADMIN_EMAIL = "gwa333903@gmail.com"; 
 const GITHUB_USERNAME = "gwa333903-hue"; 
 const GITHUB_REPO = "class"; 
-const GITHUB_TOKEN = ""; // Your Fine-Grained PAT
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
 
 // ==========================================
-// 2. INITIALIZATION
+// 2. INITIALIZATION & HELPERS
 // ==========================================
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentUserData = null; // Caches student profile data
+let currentUserData = null; 
+
+// Helper function to compress and convert images to Base64
+function processImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxSize = 200; 
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height && width > maxSize) {
+                    height *= maxSize / width;
+                    width = maxSize;
+                } else if (height > maxSize) {
+                    width *= maxSize / height;
+                    height = maxSize;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8)); 
+            };
+        };
+    });
+}
 
 // ==========================================
 // 3. AUTHENTICATION & ROUTING
@@ -40,7 +67,6 @@ onAuthStateChanged(auth, async (user) => {
     const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
     
     if (user) {
-        // Admin Routing Check
         if (user.email === ADMIN_EMAIL) {
             if (isIndex || window.location.pathname.includes('student.html')) {
                 window.location.href = 'admin.html';
@@ -54,7 +80,6 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        // Student Routing & Profile Check
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
@@ -67,7 +92,6 @@ onAuthStateChanged(auth, async (user) => {
                 initStudentDashboard();
             }
         } else {
-            // No profile -> show setup form on index.html
             if (!isIndex) { window.location.href = 'index.html'; return; }
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('profile-section').classList.remove('hidden');
@@ -76,12 +100,10 @@ onAuthStateChanged(auth, async (user) => {
         setupLogout();
 
     } else {
-        // Not logged in -> push to index
         if (!isIndex) window.location.href = 'index.html';
     }
 });
 
-// Existing Google Login Button (index.html)
 const btnLogin = document.getElementById('btn-login');
 if (btnLogin) {
     btnLogin.addEventListener('click', () => {
@@ -90,12 +112,10 @@ if (btnLogin) {
     });
 }
 
-// --- Email & Password Auth Logic ---
 const emailAuthForm = document.getElementById('email-auth-form');
 const btnEmailSignup = document.getElementById('btn-email-signup');
 
 if (emailAuthForm) {
-    // Handle Email Login
     emailAuthForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('auth-email').value;
@@ -110,7 +130,6 @@ if (emailAuthForm) {
 }
 
 if (btnEmailSignup) {
-    // Handle Email Sign Up
     btnEmailSignup.addEventListener('click', async () => {
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-password').value;
@@ -128,7 +147,6 @@ if (btnEmailSignup) {
     });
 }
 
-// Profile Setup Form (index.html)
 const profileForm = document.getElementById('profile-form');
 if (profileForm) {
     profileForm.addEventListener('submit', async (e) => {
@@ -137,6 +155,12 @@ if (profileForm) {
         if (!user) return;
         
         try {
+            const picFile = document.getElementById('p-pic').files[0];
+            let photoBase64 = "";
+            if (picFile) {
+                photoBase64 = await processImage(picFile);
+            }
+
             await setDoc(doc(db, "users", user.uid), {
                 name: document.getElementById('p-name').value,
                 email: user.email,
@@ -144,6 +168,7 @@ if (profileForm) {
                 course: document.getElementById('p-course').value,
                 section: document.getElementById('p-section').value,
                 rollNumber: document.getElementById('p-roll').value,
+                photoURL: photoBase64
             });
             window.location.href = 'student.html';
         } catch (error) {
@@ -163,14 +188,12 @@ function setupLogout() {
 // 4. ADMIN DASHBOARD LOGIC (admin.html)
 // ==========================================
 async function initAdminDashboard() {
-    // 1. Fetch Total Users Analytics
     try {
         const usersCol = collection(db, "users");
         const snapshot = await getCountFromServer(usersCol);
         document.getElementById('total-users').innerText = snapshot.data().count;
     } catch (e) { console.error("Error fetching user count", e); }
 
-    // 2. Upload Feature (GitHub API integration)
     const uploadForm = document.getElementById('upload-form');
     const uploadStatus = document.getElementById('upload-status');
     const fileInput = document.getElementById('file-input');
@@ -185,22 +208,17 @@ async function initAdminDashboard() {
         uploadStatus.innerText = "Converting and uploading to GitHub... please wait.";
         uploadStatus.style.color = "black";
 
-        // Convert file to Base64 for GitHub API
         const reader = new FileReader();
         reader.readAsDataURL(file);
         
         reader.onloadend = async () => {
             try {
-                // Get the base64 string without the prefix
                 const base64Content = reader.result.split(',')[1];
-                
-                // Create a unique, safe file path
                 const safeFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
                 const filePath = `class_notes/${Date.now()}_${safeFileName}`;
                 
                 const githubApiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${filePath}`;
 
-                // Push file to GitHub
                 const githubResponse = await fetch(githubApiUrl, {
                     method: "PUT",
                     headers: {
@@ -220,7 +238,6 @@ async function initAdminDashboard() {
                 const githubData = await githubResponse.json();
                 const fileUrl = githubData.content.download_url;
 
-                // Save metadata to Firestore
                 await addDoc(collection(db, "class_notes"), {
                     fileName: file.name,
                     fileUrl: fileUrl,
@@ -232,7 +249,6 @@ async function initAdminDashboard() {
                 uploadStatus.style.color = "green";
                 uploadForm.reset();
                 
-                // Refresh the file list immediately after a successful upload
                 loadManageFiles(); 
                 
             } catch (error) {
@@ -250,7 +266,6 @@ async function initAdminDashboard() {
         };
     });
 
-    // 3. Fetch Download Logs
     try {
         const logsRef = collection(db, "download_logs");
         const q = query(logsRef, orderBy("downloadedAt", "desc"), limit(50));
@@ -272,9 +287,6 @@ async function initAdminDashboard() {
         });
     } catch (e) { console.error("Error fetching logs", e); }
 
-    // ==========================================
-    // 4. Manage Uploaded Files List (Edit & Delete)
-    // ==========================================
     async function loadManageFiles() {
         try {
             const notesRef = collection(db, "class_notes");
@@ -300,29 +312,25 @@ async function initAdminDashboard() {
                     </td>
                 `;
                 
-                // --- Edit File Name Event ---
                 tr.querySelector('.btn-edit').addEventListener('click', async () => {
                     const newName = prompt("Enter new file name:", data.fileName);
-                    // Check if input is valid and actually changed
                     if (newName && newName.trim() !== "" && newName.trim() !== data.fileName) {
                         try {
                             await updateDoc(doc(db, "class_notes", docId), {
                                 fileName: newName.trim()
                             });
-                            loadManageFiles(); // Refresh UI list
+                            loadManageFiles(); 
                         } catch (err) {
                             alert("Error updating file name: " + err.message);
                         }
                     }
                 });
 
-                // --- Delete File Event ---
                 tr.querySelector('.btn-delete').addEventListener('click', async () => {
                     if (confirm(`Are you sure you want to remove "${data.fileName}" from the student portal?`)) {
                         try {
-                            // Removes document from Firestore (revoking portal access)
                             await deleteDoc(doc(db, "class_notes", docId));
-                            loadManageFiles(); // Refresh UI list
+                            loadManageFiles(); 
                         } catch (err) {
                             alert("Error deleting file: " + err.message);
                         }
@@ -336,7 +344,6 @@ async function initAdminDashboard() {
         }
     }
 
-    // Trigger initial load on page boot
     loadManageFiles();
 }
 
@@ -346,6 +353,86 @@ async function initAdminDashboard() {
 async function initStudentDashboard() {
     document.getElementById('student-welcome-text').innerText = `Welcome, ${currentUserData.name} (Roll: ${currentUserData.rollNumber})`;
     
+    const profileImg = document.getElementById('student-profile-img');
+    if (currentUserData.photoURL) {
+        profileImg.src = currentUserData.photoURL;
+        profileImg.classList.remove('hidden');
+    }
+    
+    // --- Edit Profile Logic ---
+    const editProfileModal = document.getElementById('edit-profile-modal');
+    const btnEditProfile = document.getElementById('btn-edit-profile');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const editProfileForm = document.getElementById('edit-profile-form');
+
+    if (btnEditProfile) {
+        btnEditProfile.addEventListener('click', () => {
+            document.getElementById('edit-name').value = currentUserData.name || '';
+            document.getElementById('edit-age').value = currentUserData.age || '';
+            document.getElementById('edit-course').value = currentUserData.course || '';
+            document.getElementById('edit-section').value = currentUserData.section || '';
+            document.getElementById('edit-roll').value = currentUserData.rollNumber || '';
+            document.getElementById('edit-pic').value = ""; 
+            
+            editProfileModal.classList.remove('hidden');
+        });
+    }
+
+    if (btnCloseModal) {
+        btnCloseModal.addEventListener('click', () => {
+            editProfileModal.classList.add('hidden');
+        });
+    }
+
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btnSubmit = editProfileForm.querySelector('button[type="submit"]');
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "Updating...";
+
+            try {
+                const newName = document.getElementById('edit-name').value;
+                const newAge = Number(document.getElementById('edit-age').value);
+                const newCourse = document.getElementById('edit-course').value;
+                
+                const picFile = document.getElementById('edit-pic').files[0];
+                let finalPhotoURL = currentUserData.photoURL; 
+                if (picFile) {
+                    finalPhotoURL = await processImage(picFile);
+                }
+
+                await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                    name: newName,
+                    age: newAge,
+                    course: newCourse,
+                    photoURL: finalPhotoURL
+                });
+
+                currentUserData.name = newName;
+                currentUserData.age = newAge;
+                currentUserData.course = newCourse;
+                currentUserData.photoURL = finalPhotoURL;
+                
+                document.getElementById('student-welcome-text').innerText = `Welcome, ${currentUserData.name} (Roll: ${currentUserData.rollNumber})`;
+                
+                if (finalPhotoURL) {
+                    profileImg.src = finalPhotoURL;
+                    profileImg.classList.remove('hidden');
+                }
+                
+                alert("Profile updated successfully!");
+                editProfileModal.classList.add('hidden');
+            } catch (error) {
+                alert("Error updating profile: " + error.message);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = "Update Profile";
+            }
+        });
+    }
+    // --- END Edit Profile Logic ---
+
     try {
         const notesRef = collection(db, "class_notes");
         const q = query(notesRef, orderBy("uploadedAt", "desc"));
@@ -374,19 +461,16 @@ async function initStudentDashboard() {
                 </div>
             `;
 
-            // Preview Button
             card.querySelector('.btn-preview').addEventListener('click', () => {
                 window.open(note.fileUrl, '_blank');
             });
 
-            // Download Button (Tracks then downloads)
             card.querySelector('.btn-download').addEventListener('click', async (e) => {
                 const btn = e.target;
                 btn.innerText = "Loading...";
                 btn.disabled = true;
 
                 try {
-                    // 1. Log the download in Firestore
                     await addDoc(collection(db, "download_logs"), {
                         rollNumber: currentUserData.rollNumber,
                         studentName: currentUserData.name,
@@ -394,7 +478,6 @@ async function initStudentDashboard() {
                         downloadedAt: serverTimestamp()
                     });
 
-                    // 2. Trigger actual download
                     const response = await fetch(note.fileUrl);
                     const blob = await response.blob();
                     const objectUrl = window.URL.createObjectURL(blob);
@@ -408,7 +491,6 @@ async function initStudentDashboard() {
                     a.remove();
                 } catch (err) {
                     console.error(err);
-                    // Fallback if fetch fails
                     window.open(note.fileUrl, '_blank'); 
                 } finally {
                     btn.innerText = "Download";
