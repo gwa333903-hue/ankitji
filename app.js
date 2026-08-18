@@ -17,7 +17,17 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "gwa333903@gmail.com"; 
 const GITHUB_USERNAME = "gwa333903-hue"; 
 const GITHUB_REPO = "class"; 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
+// const GITHUB_TOKEN = ""; 
+// We ask Vercel for the data instead of asking GitHub directly
+fetch('/api/github')
+  .then(response => response.json())
+  .then(data => {
+    console.log("Here is the data from GitHub:", data);
+    // You can write your code here to display the data on your website!
+  })
+  .catch(error => {
+    console.error("Oops, something went wrong:", error);
+  });
 
 // ==========================================
 // 2. INITIALIZATION & HELPERS

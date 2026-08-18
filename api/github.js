@@ -1,28 +1,28 @@
 // File: api/github.js
-
 export default async function handler(req, res) {
+  // We put your variables here on the server where they are safe!
+  const GITHUB_USERNAME = "gwa333903-hue"; 
+  const GITHUB_REPO = "class"; 
+  
+  // This is where process.env goes! It works here.
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN; 
+  
   try {
-    // Fetching from your specific GitHub username
-    const response = await fetch('https://api.github.com/users/gwa333903-hue', {
+    // This fetches data about your specific repository
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}`, {
       headers: {
-        // Vercel will safely swap process.env.GITHUB_TOKEN with the secret you put in their dashboard
-        'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'Vercel-Serverless-Function' 
+        'User-Agent': 'Vercel-Serverless-Function'
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`GitHub API Error: ${response.status}`);
-    }
-
     const data = await response.json();
     
-    // Send the data safely back to your website
+    // Send the data back to your app.js
     res.status(200).json(data);
     
   } catch (error) {
-    console.error("Backend Error:", error);
-    res.status(500).json({ error: 'Failed to fetch data from GitHub' });
+    res.status(500).json({ error: 'Failed to fetch data' });
   }
 }
