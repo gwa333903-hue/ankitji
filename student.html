@@ -23,6 +23,12 @@
             </div>
         </div>
 
+        <!-- NEW: Search and Favorites Toolbar -->
+        <div class="toolbar" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="search-input" class="form-control" placeholder="Search notes by name..." style="flex: 1;">
+            <button id="btn-toggle-favs" class="btn btn-secondary" style="width: auto;">⭐ Show Favorites</button>
+        </div>
+
         <div class="notes-grid" id="notes-container">
             <!-- Notes injected here via JS -->
         </div>
@@ -45,7 +51,7 @@
                     <label>Course</label>
                     <select id="edit-course" class="form-control" required>
                         <option value="BBA">BBA</option>
-                        <!-- Add more options if needed -->
+                        <option value="BCA">BCA</option>
                     </select>
                 </div>
                 <div class="form-group">

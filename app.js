@@ -15,8 +15,6 @@ const firebaseConfig = {
 };
 
 const ADMIN_EMAIL = "gwa333903@gmail.com"; 
-const GITHUB_USERNAME = "gwa333903-hue"; 
-const GITHUB_REPO = "class"; 
 
 // ==========================================
 // 2. INITIALIZATION & HELPERS
@@ -167,7 +165,8 @@ if (profileForm) {
                 course: document.getElementById('p-course').value,
                 section: document.getElementById('p-section').value,
                 rollNumber: document.getElementById('p-roll').value,
-                photoURL: photoBase64
+                photoURL: photoBase64,
+                favorites: [] // Initialize favorites array
             });
             window.location.href = 'student.html';
         } catch (error) {
@@ -203,6 +202,11 @@ async function initAdminDashboard() {
         const file = fileInput.files[0];
         if (!file) return;
 
+        // Get Custom Name and Course
+        const customNameInput = document.getElementById('custom-file-name').value.trim();
+        const selectedCourse = document.getElementById('upload-course').value;
+        const finalFileName = customNameInput !== "" ? customNameInput : file.name;
+
         btnUpload.disabled = true;
         uploadStatus.innerText = "Converting and uploading securely... please wait.";
         uploadStatus.style.color = "black";
@@ -216,7 +220,6 @@ async function initAdminDashboard() {
                 const safeFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
                 const filePath = `class_notes/${Date.now()}_${safeFileName}`;
                 
-                // 🚀 Send the file to our new Vercel Backend instead of GitHub directly!
                 const backendResponse = await fetch('/api/upload', {
                     method: "POST",
                     headers: {
@@ -235,18 +238,19 @@ async function initAdminDashboard() {
                     throw new Error(backendData.error || "Backend rejected the upload.");
                 }
 
-                // Get the URL sent back by our serverless function
                 const fileUrl = backendData.fileUrl;
 
-                // Save to Firestore
+                // Save to Firestore with new fields
                 await addDoc(collection(db, "class_notes"), {
-                    fileName: file.name,
+                    fileName: finalFileName,
+                    originalName: file.name,
+                    course: selectedCourse,
                     fileUrl: fileUrl,
                     uploadedAt: serverTimestamp(),
                     uploaderEmail: auth.currentUser.email
                 });
 
-                uploadStatus.innerText = "Success! File uploaded to GitHub & Firestore.";
+                uploadStatus.innerText = "Success! File uploaded securely.";
                 uploadStatus.style.color = "green";
                 uploadForm.reset();
                 
@@ -305,7 +309,7 @@ async function initAdminDashboard() {
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${data.fileName}</td>
+                    <td>${data.fileName} <br><small style="color:gray;">(${data.course || 'All'})</small></td>
                     <td>${timeString}</td>
                     <td>
                         <button class="btn btn-secondary btn-edit" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; width: auto; margin-right: 5px;">Edit Name</button>
@@ -424,6 +428,7 @@ async function initStudentDashboard() {
                 
                 alert("Profile updated successfully!");
                 editProfileModal.classList.add('hidden');
+                location.reload(); // Refresh to update notes based on new course if changed
             } catch (error) {
                 alert("Error updating profile: " + error.message);
             } finally {
@@ -432,40 +437,84 @@ async function initStudentDashboard() {
             }
         });
     }
-    // --- END Edit Profile Logic ---
 
-    try {
-        const notesRef = collection(db, "class_notes");
-        const q = query(notesRef, orderBy("uploadedAt", "desc"));
-        const snapshot = await getDocs(q);
-        
-        const container = document.getElementById('notes-container');
+    // --- Search, Filter, and Favorites Logic ---
+    let allNotes = [];
+    let showingFavorites = false;
+
+    if (!currentUserData.favorites) {
+        currentUserData.favorites = [];
+    }
+
+    const container = document.getElementById('notes-container');
+    const searchInput = document.getElementById('search-input');
+    const btnToggleFavs = document.getElementById('btn-toggle-favs');
+
+    function renderNotes() {
         container.innerHTML = '';
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
-        if (snapshot.empty) {
-            container.innerHTML = '<p>No class notes available yet.</p>';
+        const filteredNotes = allNotes.filter(note => {
+            // Check course (if no course on note, assume it's for everyone, or restrict to exact match)
+            const matchesCourse = note.course === currentUserData.course; 
+            const matchesSearch = note.fileName.toLowerCase().includes(searchTerm);
+            const matchesFav = showingFavorites ? currentUserData.favorites.includes(note.id) : true;
+            
+            return matchesCourse && matchesSearch && matchesFav;
+        });
+
+        if (filteredNotes.length === 0) {
+            container.innerHTML = '<p>No notes found.</p>';
             return;
         }
 
-        snapshot.forEach((docSnap) => {
-            const note = docSnap.data();
+        filteredNotes.forEach((note) => {
             const dateStr = note.uploadedAt ? note.uploadedAt.toDate().toLocaleDateString() : 'Recently';
+            const isFav = currentUserData.favorites.includes(note.id);
             
             const card = document.createElement('div');
             card.className = 'note-card';
             card.innerHTML = `
-                <div class="note-title">${note.fileName}</div>
-                <div class="note-date">Uploaded: ${dateStr}</div>
-                <div class="note-actions">
-                    <button class="btn btn-secondary btn-preview">Preview</button>
-                    <button class="btn btn-download">Download</button>
+                <div class="note-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div class="note-title" style="font-weight: 600; margin-bottom: 0.5rem; word-break: break-all;">${note.fileName}</div>
+                    <button class="star-btn ${isFav ? 'active' : ''}" data-id="${note.id}" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: ${isFav ? '#fbbf24' : '#cbd5e1'};">
+                        ★
+                    </button>
+                </div>
+                <div class="note-date" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Uploaded: ${dateStr}</div>
+                <div class="note-actions" style="display: flex; gap: 0.5rem; margin-top: auto;">
+                    <button class="btn btn-secondary btn-preview" style="padding: 0.5rem; font-size: 0.9rem;">Preview</button>
+                    <button class="btn btn-download" style="padding: 0.5rem; font-size: 0.9rem;">Download</button>
                 </div>
             `;
 
+            // Favorite Button Logic
+            const starBtn = card.querySelector('.star-btn');
+            starBtn.addEventListener('click', async () => {
+                const noteId = note.id;
+                
+                if (currentUserData.favorites.includes(noteId)) {
+                    currentUserData.favorites = currentUserData.favorites.filter(id => id !== noteId);
+                } else {
+                    currentUserData.favorites.push(noteId);
+                }
+                
+                try {
+                    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                        favorites: currentUserData.favorites
+                    });
+                    renderNotes(); 
+                } catch (err) {
+                    alert("Error updating favorite: " + err.message);
+                }
+            });
+
+            // Preview Logic
             card.querySelector('.btn-preview').addEventListener('click', () => {
                 window.open(note.fileUrl, '_blank');
             });
 
+            // Download Logic
             card.querySelector('.btn-download').addEventListener('click', async (e) => {
                 const btn = e.target;
                 btn.innerText = "Loading...";
@@ -501,8 +550,32 @@ async function initStudentDashboard() {
 
             container.appendChild(card);
         });
+    }
+
+    try {
+        const notesRef = collection(db, "class_notes");
+        const q = query(notesRef, orderBy("uploadedAt", "desc"));
+        const snapshot = await getDocs(q);
+        
+        snapshot.forEach((docSnap) => {
+            allNotes.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        
+        renderNotes();
     } catch (error) {
         console.error("Error loading notes: ", error);
-        document.getElementById('notes-container').innerHTML = '<p style="color:red">Failed to load notes.</p>';
+        container.innerHTML = '<p style="color:red">Failed to load notes.</p>';
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', renderNotes);
+    }
+
+    if (btnToggleFavs) {
+        btnToggleFavs.addEventListener('click', () => {
+            showingFavorites = !showingFavorites;
+            btnToggleFavs.innerText = showingFavorites ? "🌟 Show All Notes" : "⭐ Show Favorites";
+            renderNotes();
+        });
     }
 }
